@@ -1,0 +1,595 @@
+/* =============================================================================
+   CyberPush Ultra — Analytics « Observatory », habillage Lumière
+   Cockpit de données en thème clair : tuiles blanches à ombre teintée, accent
+   bleu → turquoise, mouvement orchestré. Jetons dérivés de admin.css (--cu-*).
+   Tout est scoppé à #cu-analytics-page → aucun impact sur les autres pages.
+   ============================================================================= */
+
+#cu-analytics-page {
+	/* Accent (bleu WordPress 7 → turquoise) */
+	--obs-a1: var(--cu-accent);
+	--obs-a2: var(--cu-viz-3);
+	--obs-grad: var(--cu-grad-data);
+	--obs-grad-text: var(--cu-grad-text);
+	--obs-grad-soft: linear-gradient(135deg, rgba(56,88,233,.08), rgba(15,181,201,.06));
+	--obs-glow: 0 0 0 1px rgba(56,88,233,.18), 0 18px 44px -18px rgba(56,88,233,.45);
+
+	/* Surfaces */
+	--obs-tile: var(--cu-panel);
+	--obs-tile-2: var(--cu-panel-2);
+	--obs-tile-border: var(--cu-panel-border);
+	--obs-tile-sheen: linear-gradient(180deg, rgba(56,88,233,.04), rgba(255,255,255,0) 46%);
+	--obs-shadow: var(--cu-shadow);
+	--obs-shadow-hover: var(--cu-shadow-md);
+
+	/* Sémantique */
+	--obs-good: var(--cu-success);
+	--obs-warn: var(--cu-warning);
+	--obs-crit: var(--cu-danger);
+	--obs-good-soft: var(--cu-success-soft);
+	--obs-crit-soft: var(--cu-danger-soft);
+
+	/* Typo display (grands chiffres) */
+	--obs-display: var(--cu-font-display);
+	--obs-mono: var(--cu-font-mono);
+
+	/* Mouvement */
+	--obs-ease: cubic-bezier(.22, 1, .36, 1);       /* spring doux */
+	--obs-ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* =========================================================================
+   TUILE VERRE (le composant de base du bento)
+   ========================================================================= */
+#cu-analytics-page .cu-tile {
+	position: relative;
+	background: var(--obs-tile);
+	border: 1px solid var(--obs-tile-border);
+	border-radius: var(--cu-radius);
+	padding: 20px;
+	box-shadow: var(--obs-shadow);
+	overflow: hidden;
+	transition: box-shadow .3s var(--obs-ease), border-color .3s var(--obs-ease);
+	backdrop-filter: saturate(1.1) blur(6px);
+}
+#cu-analytics-page .cu-tile::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: var(--obs-tile-sheen);
+	pointer-events: none;
+}
+#cu-analytics-page .cu-tile.is-hover:hover,
+#cu-analytics-page .cu-tile.cu-tile-interactive:hover {
+	box-shadow: var(--obs-shadow-hover);
+	border-color: rgba(56,88,233,.30);
+}
+#cu-analytics-page .cu-tile-head {
+	display: flex; align-items: center; gap: 10px;
+	margin-bottom: 14px;
+}
+#cu-analytics-page .cu-tile-title {
+	font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none;
+	color: var(--cu-text);
+}
+#cu-analytics-page .cu-tile-title .cu-icon { width: 15px; height: 15px; color: var(--obs-a1); }
+
+/* =========================================================================
+   GRILLE BENTO
+   ========================================================================= */
+#cu-analytics-page .cu-bento {
+	display: grid;
+	grid-template-columns: repeat(12, 1fr);
+	gap: 16px;
+	align-items: stretch;
+}
+#cu-analytics-page .col-3  { grid-column: span 3; }
+#cu-analytics-page .col-4  { grid-column: span 4; }
+#cu-analytics-page .col-5  { grid-column: span 5; }
+#cu-analytics-page .col-6  { grid-column: span 6; }
+#cu-analytics-page .col-7  { grid-column: span 7; }
+#cu-analytics-page .col-8  { grid-column: span 8; }
+#cu-analytics-page .col-12 { grid-column: span 12; }
+@media (max-width: 1200px) {
+	#cu-analytics-page .col-3, #cu-analytics-page .col-4, #cu-analytics-page .col-5 { grid-column: span 6; }
+	#cu-analytics-page .col-7, #cu-analytics-page .col-8 { grid-column: span 12; }
+}
+@media (max-width: 782px) {
+	#cu-analytics-page .cu-bento > [class*="col-"] { grid-column: span 12; }
+}
+
+/* =========================================================================
+   STAT (grand chiffre + delta + sparkline)
+   ========================================================================= */
+#cu-analytics-page .cu-stat-num {
+	font-family: var(--obs-display);
+	font-size: clamp(30px, 4vw, 46px);
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: -.02em;
+	font-variant-numeric: tabular-nums;
+	color: var(--cu-text);
+}
+#cu-analytics-page .cu-stat-label {
+	font-size: 12px; color: var(--cu-text-dim); margin-top: 6px;
+	letter-spacing: .02em;
+}
+#cu-analytics-page .cu-delta {
+	display: inline-flex; align-items: center; gap: 3px;
+	font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+	padding: 2px 8px; border-radius: 999px; line-height: 1.5;
+}
+#cu-analytics-page .cu-delta.up   { color: var(--obs-good); background: var(--obs-good-soft); }
+#cu-analytics-page .cu-delta.down { color: var(--obs-crit); background: var(--obs-crit-soft); }
+#cu-analytics-page .cu-delta.flat { color: var(--cu-text-dim); background: var(--cu-gray-soft); }
+
+/* =========================================================================
+   HERO
+   ========================================================================= */
+#cu-analytics-page .cu-obs-hero {
+	position: relative;
+	border-radius: calc(var(--cu-radius) + 4px);
+	padding: 26px 28px;
+	background: var(--obs-tile);
+	border: 1px solid var(--obs-tile-border);
+	box-shadow: var(--obs-shadow);
+	overflow: hidden;
+}
+#cu-analytics-page .cu-obs-hero::after {
+	content: "";
+	position: absolute; top: -40%; right: -10%;
+	width: 460px; height: 460px;
+	background: radial-gradient(closest-side, rgba(15,181,201,.18), rgba(56,88,233,0) 70%);
+	pointer-events: none;
+}
+#cu-analytics-page .cu-obs-hero-num {
+	font-family: var(--obs-display);
+	font-size: clamp(40px, 6vw, 68px);
+	font-weight: 600; line-height: .95; letter-spacing: -.04em;
+	font-variant-numeric: tabular-nums;
+	background: var(--obs-grad-text);
+	-webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* =========================================================================
+   SEGMENTED CONTROL (période) — indicateur glissant
+   ========================================================================= */
+#cu-analytics-page .cu-seg {
+	position: relative; display: inline-flex;
+	background: rgba(20,26,51,.05); border: 1px solid transparent;
+	border-radius: 999px; padding: 4px; gap: 2px;
+}
+#cu-analytics-page .cu-seg button {
+	position: relative; z-index: 1;
+	border: 0; background: transparent; cursor: pointer;
+	font: 600 12.5px/1 var(--cu-font); color: var(--cu-text-dim);
+	padding: 7px 15px; border-radius: 999px;
+	transition: color .25s var(--obs-ease);
+}
+#cu-analytics-page .cu-seg button.is-active { color: var(--cu-text); font-weight: 600; }
+#cu-analytics-page .cu-seg-thumb {
+	position: absolute; top: 4px; bottom: 4px; left: 4px;
+	border-radius: 999px; background: var(--cu-panel);
+	box-shadow: 0 1px 2px rgba(20,26,51,.08), 0 4px 12px -4px rgba(35,55,200,.3);
+	transition: transform .38s var(--obs-ease), width .38s var(--obs-ease);
+	z-index: 0;
+}
+
+/* =========================================================================
+   LIVE (temps réel)
+   ========================================================================= */
+#cu-analytics-page .cu-live-dot {
+	width: 9px; height: 9px; border-radius: 50%;
+	background: var(--obs-good);
+	box-shadow: 0 0 0 0 rgba(23,184,119,.5);
+	animation: cu-obs-pulse 1.8s var(--obs-ease-out) infinite;
+	display: inline-block;
+}
+@keyframes cu-obs-pulse {
+	0%   { box-shadow: 0 0 0 0 rgba(23,184,119,.5); }
+	70%  { box-shadow: 0 0 0 8px rgba(23,184,119,0); }
+	100% { box-shadow: 0 0 0 0 rgba(23,184,119,0); }
+}
+
+/* =========================================================================
+   RING GAUGE (le canvas est dessiné par cu-viz.js ; ici l'habillage)
+   ========================================================================= */
+#cu-analytics-page .cu-ring {
+	position: relative; display: flex; align-items: center; justify-content: center;
+	width: 132px; height: 132px; margin: 0 auto;
+}
+#cu-analytics-page .cu-ring canvas { width: 132px; height: 132px; }
+#cu-analytics-page .cu-ring-center {
+	position: absolute; inset: 0; display: flex; flex-direction: column;
+	align-items: center; justify-content: center; text-align: center;
+}
+#cu-analytics-page .cu-ring-val {
+	font-family: var(--obs-display); font-size: 26px; font-weight: 600;
+	letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--cu-text);
+}
+#cu-analytics-page .cu-ring-cap { font-size: 10.5px; color: var(--cu-text-dim); text-transform: uppercase; letter-spacing: .05em; }
+
+/* Tuile « Santé du trafic » — 3 gauges alignées */
+#cu-analytics-page .cu-gauges {
+	display: flex; gap: 20px; justify-content: space-around; align-items: flex-start;
+	flex-wrap: wrap; padding: 24px 20px;
+}
+#cu-analytics-page .cu-gauge-item {
+	display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 150px;
+}
+#cu-analytics-page .cu-gauge-title { font-size: 12px; font-weight: 700; color: var(--cu-text-dim); letter-spacing: .02em; }
+#cu-analytics-page .cu-gauge-sub { font-size: 11px; color: var(--cu-text-faint); }
+
+/* =========================================================================
+   RANK LIST (barres qui se remplissent)
+   ========================================================================= */
+#cu-analytics-page .cu-rank { display: flex; flex-direction: column; gap: 11px; }
+#cu-analytics-page .cu-rank-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+#cu-analytics-page .cu-rank-label {
+	font-size: 13px; color: var(--cu-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+#cu-analytics-page .cu-rank-val { font-size: 12.5px; font-weight: 700; color: var(--cu-text-dim); font-variant-numeric: tabular-nums; }
+#cu-analytics-page .cu-rank-track {
+	grid-column: 1 / -1; height: 7px; border-radius: 999px;
+	background: var(--cu-bg-soft); overflow: hidden;
+}
+#cu-analytics-page .cu-rank-fill {
+	height: 100%; border-radius: 999px; background: var(--obs-grad);
+	width: 0; transition: width .9s var(--obs-ease);
+}
+
+/* =========================================================================
+   TOOLTIP (charts)
+   ========================================================================= */
+#cu-analytics-page .cu-viz-tip {
+	position: absolute; z-index: 30; pointer-events: none;
+	background: rgba(20,26,51,.95); color: #fff;
+	font: 600 12px/1.4 var(--cu-font); padding: 8px 11px; border-radius: 10px;
+	box-shadow: 0 12px 30px -8px rgba(0,0,0,.5); opacity: 0;
+	transform: translate(-50%, -8px); transition: opacity .15s ease;
+	white-space: nowrap;
+}
+#cu-analytics-page .cu-viz-tip.on { opacity: 1; }
+#cu-analytics-page .cu-viz-tip b { color: var(--cu-mint); font-weight: 700; }
+
+/* =========================================================================
+   SKELETON (shimmer) — remplace les spinners
+   ========================================================================= */
+#cu-analytics-page .cu-skel {
+	position: relative; overflow: hidden; border-radius: 8px;
+	background: var(--cu-bg-soft);
+}
+#cu-analytics-page .cu-skel::after {
+	content: ""; position: absolute; inset: 0;
+	transform: translateX(-100%);
+	background: linear-gradient(90deg, transparent, rgba(56,88,233,.10), transparent);
+	animation: cu-obs-shimmer 1.3s infinite;
+}
+@keyframes cu-obs-shimmer { 100% { transform: translateX(100%); } }
+#cu-analytics-page .cu-skel-line { height: 12px; margin: 8px 0; }
+#cu-analytics-page .cu-skel-num  { height: 40px; width: 55%; margin-bottom: 10px; }
+#cu-analytics-page .cu-skel-wrap { padding: 10px 4px; }
+
+/* Le spinner résiduel (brief/temps réel) adopte l'accent Observatory */
+#cu-analytics-page .cu-spinner { border-top-color: var(--obs-a1); }
+
+/* =========================================================================
+   MOUVEMENT — entrée en cascade (piloté par cu-viz.js / IntersectionObserver)
+   ========================================================================= */
+#cu-analytics-page .cu-reveal {
+	opacity: 0; transform: translateY(16px) scale(.985);
+	transition: opacity .6s var(--obs-ease-out), transform .6s var(--obs-ease-out);
+	will-change: opacity, transform;
+}
+#cu-analytics-page .cu-reveal.is-in { opacity: 1; transform: none; will-change: auto; }
+
+/* =========================================================================
+   RESKIN OBSERVATORY — on transforme le markup EXISTANT (cartes, KPI, brief,
+   barres, titres, toolbar, tables) sans toucher aux loaders ni aux IDs.
+   ========================================================================= */
+
+/* Barre d'outils → capsule blanche (les boutons, champs, titres de page et de
+   section suivent le design system commun de admin.css). */
+#cu-analytics-page .cu-toolbar#cu-analytics-toolbar {
+	background: rgba(255,255,255,.8);
+	border: 1px solid var(--obs-tile-border);
+	border-radius: 16px;
+	padding: 10px 14px;
+	box-shadow: var(--obs-shadow);
+}
+#cu-analytics-page .cu-section { margin-top: 28px; }
+
+/* Toute .cu-card de l'analytics → TUILE VERRE */
+#cu-analytics-page .cu-card {
+	position: relative;
+	background: var(--obs-tile);
+	border: 1px solid var(--obs-tile-border);
+	border-radius: var(--cu-radius);
+	box-shadow: var(--obs-shadow);
+	overflow: hidden;
+	transition: box-shadow .3s var(--obs-ease), border-color .3s var(--obs-ease);
+}
+#cu-analytics-page .cu-card::after {
+	content: ""; position: absolute; inset: 0 0 auto 0; height: 46%;
+	background: var(--obs-tile-sheen); pointer-events: none;
+}
+#cu-analytics-page .cu-card:hover {
+	box-shadow: var(--obs-shadow-hover);
+	border-color: rgba(56,88,233,.28);
+}
+
+/* KPI → tuiles statistiques cinématographiques */
+#cu-analytics-page #cu-kpi-grid { gap: 14px; }
+#cu-analytics-page .cu-kpi {
+	padding: 20px 20px 18px;
+}
+#cu-analytics-page .cu-kpi-label svg,
+#cu-analytics-page .cu-kpi-label .cu-icon { color: var(--obs-a1); width: 15px; height: 15px; }
+#cu-analytics-page .cu-kpi-value {
+	font-family: var(--obs-display);
+	font-size: clamp(24px, 2.4vw, 32px);
+	font-weight: 600; letter-spacing: -.03em; line-height: 1.05;
+	font-variant-numeric: tabular-nums;
+	margin-top: 8px;
+}
+
+/* En bref → HERO Observatory (glow + dégradé) */
+#cu-analytics-page .cu-brief {
+	position: relative;
+	background: var(--obs-tile);
+	border: 1px solid var(--obs-tile-border);
+	border-radius: calc(var(--cu-radius) + 4px);
+	box-shadow: var(--obs-shadow);
+	overflow: hidden;
+}
+#cu-analytics-page .cu-brief::after {
+	content: ""; position: absolute; top: -45%; right: -8%;
+	width: 480px; height: 480px; pointer-events: none;
+	background: radial-gradient(closest-side, rgba(15,181,201,.16), rgba(56,88,233,.06) 55%, transparent 72%);
+}
+#cu-analytics-page #cu-brief-num,
+#cu-analytics-page .cu-brief-num {
+	font-family: var(--obs-display);
+	font-weight: 600; letter-spacing: -.04em;
+	font-variant-numeric: tabular-nums;
+	background: var(--obs-grad-text);
+	-webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+
+/* Barres → dégradé + croissance animée (scaleX, sans JS) */
+#cu-analytics-page .cu-bar-track { background: var(--cu-bg-soft); border-radius: 999px; height: 7px; overflow: hidden; }
+#cu-analytics-page .cu-bar-fill {
+	background: var(--obs-grad); border-radius: 999px;
+	transform-origin: left center;
+	animation: cu-obs-grow .9s var(--obs-ease) both;
+}
+@keyframes cu-obs-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Temps réel → pastille qui pulse */
+#cu-analytics-page #cu-realtime-count {
+	position: relative; padding-left: 20px;
+}
+#cu-analytics-page #cu-realtime-count::before {
+	content: ""; position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+	width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+	box-shadow: 0 0 0 0 rgba(23,184,119,.5);
+	animation: cu-obs-pulse 1.8s var(--obs-ease-out) infinite;
+}
+
+/* Tables → lignes aérées, survol accent */
+#cu-analytics-page .cu-table thead th {
+	font-size: 12.5px; letter-spacing: 0; text-transform: none; color: var(--cu-text-faint);
+}
+#cu-analytics-page .cu-table tbody tr { transition: background .18s var(--obs-ease); }
+#cu-analytics-page .cu-table tbody tr:hover { background: var(--obs-grad-soft); }
+#cu-analytics-page .cu-table td { font-variant-numeric: tabular-nums; }
+
+/* Badges/pills → arrondi plein */
+#cu-analytics-page .cu-badge, #cu-analytics-page .cu-pill { border-radius: 999px; }
+
+/* Canvas d'évolution un peu plus haut pour respirer */
+#cu-analytics-page #cu-chart-timeseries { height: 280px; }
+
+/* =========================================================================
+   ACCESSIBILITÉ — mouvement réduit
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+	#cu-analytics-page .cu-bar-fill { animation: none; }
+	#cu-analytics-page #cu-realtime-count::before { animation: none; }
+	#cu-analytics-page .cu-card { transition: none; }
+	#cu-analytics-page .cu-reveal { opacity: 1; transform: none; transition: none; }
+	#cu-analytics-page .cu-live-dot { animation: none; }
+	#cu-analytics-page .cu-skel::after { animation: none; }
+	#cu-analytics-page .cu-rank-fill,
+	#cu-analytics-page .cu-seg-thumb,
+	#cu-analytics-page .cu-tile { transition: none; }
+}
+
+/* =====================================================================
+   Page Analytics — affinage visuel
+   ===================================================================== */
+/* Les sous-titres sont des phrases : pas de majuscules forcées (illisibles). */
+#cu-analytics-page .cu-section-title > span:not(.cu-pill),
+#cu-analytics-page .cu-section-hint { text-transform: none; letter-spacing: 0; }
+
+/* Tableau de contenu : une valeur ne se coupe jamais en deux lignes
+   (« 7,8 / % ») ; le tableau défile horizontalement si nécessaire. */
+#cu-content-table-wrap td,
+#cu-content-table-wrap .cu-badge { white-space: nowrap; }
+
+/* ==== En bref : courbe détaillée (cu-brief-chart.js) ==== */
+#cu-analytics-page .cu-brief-main { justify-content: space-between; align-items: flex-end; }
+#cu-analytics-page .cu-brief-chart { margin-top: 20px; }
+.cu-bc-stage { position: relative; border-radius: 14px; outline: none; }
+.cu-bc-stage:focus-visible { box-shadow: 0 0 0 1px var(--cu-accent), 0 0 0 4px var(--cu-accent-soft); }
+.cu-bc-svg { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--cu-font); }
+.cu-bc-grid { stroke: var(--cu-panel-border); stroke-dasharray: 3 5; }
+.cu-bc-axis { stroke: var(--cu-panel-border); stroke-width: 1.4; }
+.cu-bc-ylabel, .cu-bc-xlabel { fill: var(--cu-text-faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.cu-bc-xlabel.is-now { fill: var(--cu-accent-text); font-weight: 700; }
+.cu-bc-future { fill: var(--cu-gray-soft); opacity: 0.45; }
+.cu-bc-ghost { fill: none; stroke: var(--cu-text-faint); stroke-width: 1.6; stroke-dasharray: 4 5; opacity: 0.75; }
+.cu-bc-sheen { pointer-events: none; }
+.cu-bc-line { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.cu-bc-line-glow { fill: none; stroke-width: 9; opacity: 0.22; }
+.cu-bc-line-partial { fill: none; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 6; }
+.cu-bc-conv { fill: var(--cu-mint); stroke: #fff; stroke-width: 2; filter: drop-shadow(0 1px 3px rgba(19, 138, 74, 0.4)); }
+.cu-bc-record-line { stroke: var(--cu-accent); stroke-width: 1.2; stroke-dasharray: 2 3; }
+.cu-bc-record { fill: var(--cu-accent); }
+.cu-bc-record-text { fill: #fff; font-family: var(--cu-font-display); font-size: 11px; font-weight: 700; }
+.cu-bc-now { fill: var(--cu-accent); stroke: #fff; stroke-width: 2; }
+.cu-bc-pulse { fill: var(--cu-accent); transform-box: fill-box; transform-origin: center; animation: cu-bc-pulse 2s ease-out infinite; }
+@keyframes cu-bc-pulse {
+	0% { transform: scale(1); opacity: 0.45; }
+	100% { transform: scale(3.4); opacity: 0; }
+}
+.cu-bc-band { fill: var(--cu-accent-soft); opacity: 0.85; }
+.cu-bc-cross { stroke: var(--cu-accent); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.cu-bc.is-pinned .cu-bc-cross { stroke-dasharray: none; stroke-width: 1.8; }
+.cu-bc-dot { fill: #fff; stroke: var(--cu-accent); stroke-width: 3; filter: drop-shadow(0 2px 6px rgba(56, 88, 233, 0.45)); }
+.cu-bc-ghost-dot { fill: #fff; stroke: var(--cu-text-faint); stroke-width: 2; }
+.cu-bc-hit { fill: transparent; cursor: crosshair; }
+
+.cu-bc-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 8px; font-size: 12px; color: var(--cu-text-dim); }
+.cu-bc-key { display: inline-flex; align-items: center; gap: 7px; }
+.cu-bc-key-line { width: 18px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--cu-accent), var(--cu-accent-2), var(--cu-mint)); }
+.cu-bc-key-partial { width: 18px; height: 0; border-top: 3px dotted var(--cu-accent-2); }
+.cu-bc-key-ghost { width: 18px; height: 0; border-top: 2px dashed var(--cu-text-faint); }
+.cu-bc-key-conv { width: 9px; height: 9px; border-radius: 50%; background: var(--cu-mint); box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(19, 138, 74, 0.25); }
+.cu-bc-help { margin-left: auto; color: var(--cu-text-faint); }
+
+/* Infobulle : portail fixe dans .cu-wrap (au-dessus du menu, sous la barre d'admin). */
+.cu-bc-tip { position: fixed; z-index: 9995; width: 290px; padding: 15px 16px 12px; border-radius: 18px; background: rgba(255, 255, 255, 0.97); border: 1px solid var(--cu-panel-border); box-shadow: var(--cu-shadow-lg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-family: var(--cu-font); font-size: 13px; color: var(--cu-text); pointer-events: none; animation: cu-bc-in 0.16s ease-out; }
+.cu-bc-tip[hidden] { display: none; }
+@keyframes cu-bc-in {
+	from { opacity: 0; transform: translateY(4px); }
+	to { opacity: 1; transform: none; }
+}
+.cu-bc-tip.is-wide { width: 560px; }
+.cu-bc-tip.is-pinned { pointer-events: auto; border-color: var(--cu-accent); box-shadow: var(--cu-shadow-lg), 0 0 0 3px var(--cu-accent-soft); }
+.cu-bc-tip.is-wide .cu-bc-tip-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 18px; }
+.cu-bc-tip.is-wide .cu-bc-tip-detail { padding-left: 18px; border-left: 1px solid var(--cu-panel-border); }
+.cu-bc-tip.is-wide .cu-bc-tip-detail > .cu-bc-sec:first-child { margin-top: 0; }
+.cu-bc-tip-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cu-bc-tip-date { font-size: 12.5px; font-weight: 600; color: var(--cu-text-dim); }
+.cu-bc-now-tag { padding: 1px 8px; border-radius: 999px; background: var(--cu-accent-soft); color: var(--cu-accent-text); font-size: 11px; font-weight: 600; }
+.cu-bc-pin { display: none; margin-left: auto; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--cu-accent-text); }
+.cu-bc-tip.is-pinned .cu-bc-pin { display: inline-flex; }
+.cu-bc-tip-total { margin-top: 6px; color: var(--cu-text-dim); }
+.cu-bc-tip-total strong { margin-right: 3px; font-family: var(--cu-font-display); font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; background: var(--cu-grad-text); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.cu-bc-tip-trend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.cu-bc-vs { font-size: 12px; color: var(--cu-text-faint); }
+.cu-bc-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--cu-panel-border); }
+.cu-bc-m { min-width: 0; padding: 8px 10px; border-radius: 10px; background: var(--cu-panel-2); border: 1px solid var(--cu-panel-border); }
+.cu-bc-m span { display: block; overflow: hidden; font-size: 11px; color: var(--cu-text-faint); text-overflow: ellipsis; white-space: nowrap; }
+.cu-bc-m b { font-family: var(--cu-font-display); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cu-bc-conv-n { color: var(--cu-success); }
+.cu-bc-calm { margin: 10px 0 0; color: var(--cu-text-dim); }
+.cu-bc-sec { margin: 12px 0 6px; font-size: 11.5px; font-weight: 700; color: var(--cu-text-faint); }
+.cu-bc-bars { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.cu-bc-bars li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 3px 8px; margin: 0; }
+.cu-bc-bar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cu-bc-bars b { font-size: 12px; font-variant-numeric: tabular-nums; }
+.cu-bc-bar { grid-column: 1 / -1; height: 5px; overflow: hidden; border-radius: 5px; background: var(--cu-gray-soft); }
+.cu-bc-bar span { display: block; height: 100%; border-radius: 5px; }
+.cu-bc-pages { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; counter-reset: cu-bc-page; }
+.cu-bc-pages li { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; counter-increment: cu-bc-page; }
+.cu-bc-pages li::before { content: counter(cu-bc-page); display: inline-grid; place-items: center; flex-shrink: 0; width: 18px; height: 18px; border-radius: 6px; background: var(--cu-accent-soft); color: var(--cu-accent-text); font-size: 11px; font-weight: 700; }
+.cu-bc-page { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cu-bc-pages b { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.cu-bc-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.cu-bc-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 999px; background: var(--cu-panel-2); border: 1px solid var(--cu-panel-border); font-size: 12px; }
+.cu-bc-cc { display: inline-block; min-width: 24px; padding: 1px 4px; border-radius: 5px; background: var(--cu-accent-soft); color: var(--cu-accent-text); font-size: 10.5px; font-weight: 700; text-align: center; }
+.cu-bc-split { display: flex; gap: 2px; height: 8px; overflow: hidden; border-radius: 6px; }
+.cu-bc-split span { min-width: 3px; }
+.cu-bc-split-key { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 11.5px; color: var(--cu-text-dim); }
+.cu-bc-split-key i { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 2px; }
+.cu-bc-tip-foot { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--cu-panel-border); font-size: 11.5px; color: var(--cu-text-faint); }
+.cu-bc-skel { display: grid; gap: 8px; }
+.cu-bc-skel span { height: 10px; border-radius: 6px; background: linear-gradient(90deg, var(--cu-gray-soft) 25%, var(--cu-panel-2) 50%, var(--cu-gray-soft) 75%); background-size: 200% 100%; animation: cu-bc-shimmer 1.1s linear infinite; }
+.cu-bc-skel span:nth-child(2n) { width: 75%; }
+@keyframes cu-bc-shimmer { to { background-position: -200% 0; } }
+
+/* Mobile : panneau ancré en bas de l'écran, défilable. */
+@media (max-width: 600px) {
+	.cu-bc-tip { top: auto; right: 8px; bottom: 8px; left: 8px; width: auto; max-height: 62vh; overflow: auto; }
+	.cu-bc-help { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.cu-bc-pulse, .cu-bc-skel span, .cu-bc-tip { animation: none; }
+}
+.cu-wrap[data-cu-motion="off"] .cu-bc-pulse,
+.cu-wrap[data-cu-motion="off"] .cu-bc-skel span,
+.cu-wrap[data-cu-motion="off"] .cu-bc-tip { animation: none; }
+
+/* =====================================================================
+   Confidentialité (mode actif), conversions confirmées, évolution « nouveau »
+   ===================================================================== */
+#cu-analytics-page .cu-privacy-strip { align-items: flex-start; }
+#cu-analytics-page .cu-privacy-strip .cu-alert-strip-text { line-height: 1.5; }
+#cu-analytics-page .cu-alert-strip.is-warning .cu-alert-strip-ico { background: var(--cu-warning-soft); color: var(--cu-warning); }
+#cu-analytics-page .cu-kpi-note { margin-top: 6px; font-size: 11.5px; line-height: 1.4; color: var(--cu-text-dim); }
+#cu-analytics-page .cu-kpi-note:empty { display: none; }
+#cu-analytics-page .cu-kpi-note b { color: var(--cu-text); font-variant-numeric: tabular-nums; }
+.cu-kpi-delta.is-new { color: var(--cu-info); background: var(--cu-info-soft); }
+.cu-ai-note { margin: 4px 0 8px; font-size: 11.5px; color: var(--cu-text-dim); }
+
+/* ==========================================================================
+   Pays (carte + tableau), clics sortants, langues et écrans — 1.3.3
+   ========================================================================== */
+#cu-analytics-page .cu-section-title .cu-section-hint { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--cu-text-dim); }
+#cu-analytics-page .cu-tech-title { font-size: 12px; font-weight: 700; color: var(--cu-text-dim); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 12px; }
+#cu-analytics-page .dim { color: var(--cu-text-dim); }
+
+.cu-geo-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.cu-geo-switch { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--cu-gray-soft); gap: 2px; }
+.cu-geo-switch button { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 600; color: var(--cu-text-dim); cursor: pointer; }
+.cu-geo-switch button[aria-pressed="true"] { background: var(--cu-panel); color: var(--cu-text); box-shadow: 0 1px 2px rgba(20, 26, 51, .12); }
+.cu-geo-switch button:focus-visible { outline: 2px solid var(--cu-accent); outline-offset: 1px; }
+.cu-geo-kpis { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--cu-text-dim); }
+.cu-geo-kpis b { color: var(--cu-text); font-size: 14px; }
+.cu-geo-unknown b { color: var(--cu-warning); }
+
+.cu-geo-body { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 1100px) { .cu-geo-body { grid-template-columns: minmax(0, 1fr); } }
+.cu-geo-map { position: relative; }
+.cu-geo-svg { display: block; width: 100%; height: auto; }
+.cu-geo-region { stroke: #ffffff; stroke-width: .5; transition: fill .15s; }
+.cu-geo-region.is-hover { stroke: var(--cu-text); stroke-width: 1.2; }
+.cu-geo-tip { position: absolute; z-index: 5; pointer-events: none; min-width: 150px; padding: 8px 10px; border-radius: 8px; background: var(--cu-text); color: #fff; font-size: 12px; line-height: 1.5; box-shadow: 0 6px 18px rgba(20, 26, 51, .25); }
+.cu-geo-tip strong { font-size: 13px; }
+.cu-geo-legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 11px; color: var(--cu-text-dim); }
+.cu-geo-legend i { display: inline-block; width: 22px; height: 10px; border-radius: 2px; }
+.cu-geo-legend span:first-child { margin-right: 4px; }
+.cu-geo-legend .cu-geo-legend-empty { margin-left: 14px; }
+
+.cu-geo-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cu-geo-table th { text-align: left; font-size: 11px; font-weight: 700; color: var(--cu-text-dim); text-transform: uppercase; letter-spacing: .3px; padding: 0 6px 8px; border-bottom: 1px solid var(--cu-panel-border); }
+.cu-geo-table td { padding: 7px 6px; border-bottom: 1px solid var(--cu-panel-border); vertical-align: middle; }
+.cu-geo-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cu-geo-table tbody tr:hover { background: var(--cu-panel-2); }
+.cu-geo-code { display: inline-block; min-width: 24px; margin-right: 8px; padding: 1px 4px; border-radius: 4px; background: var(--cu-accent-soft); color: var(--cu-accent-text); font-size: 10px; font-weight: 700; text-align: center; }
+.cu-geo-bar { display: block; height: 4px; margin-top: 5px; border-radius: 2px; background: var(--cu-gray-soft); }
+.cu-geo-bar span { display: block; height: 100%; border-radius: 2px; background: #3987e5; }
+.cu-geo-wa { font-weight: 700; color: var(--cu-success); }
+.cu-geo-more { margin-top: 10px; }
+.cu-geo-note { margin: 14px 0 0; font-size: 12px; color: var(--cu-text-dim); }
+
+.cu-ob-chips { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+@media (max-width: 960px) { .cu-ob-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cu-ob-chip { padding: 10px 12px; border: 1px solid var(--cu-panel-border); border-radius: 10px; background: var(--cu-panel-2); }
+.cu-ob-chip b { display: block; margin-top: 6px; font-size: 20px; color: var(--cu-text); }
+.cu-ob-chip em { font-style: normal; font-size: 11px; font-weight: 700; }
+.cu-ob-chip em.up { color: var(--cu-success); }
+.cu-ob-chip em.down { color: var(--cu-danger); }
+.cu-ob-total span { font-size: 12px; font-weight: 700; color: var(--cu-text-dim); }
+.cu-ob-kind { display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.cu-ob-external { background: var(--cu-accent-soft); color: var(--cu-accent-text); }
+.cu-ob-download { background: var(--cu-info-soft); color: var(--cu-info); }
+.cu-ob-tel { background: var(--cu-success-soft); color: var(--cu-success); }
+.cu-ob-mail { background: var(--cu-warning-soft); color: var(--cu-warning); }
+.cu-ob-body { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 1100px) { .cu-ob-body { grid-template-columns: minmax(0, 1fr); } }
+.cu-ob-link strong { display: block; font-weight: 600; color: var(--cu-text); }
+.cu-ob-link .dim { display: block; font-size: 12px; word-break: break-all; }
